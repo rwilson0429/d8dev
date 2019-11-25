@@ -1,0 +1,17 @@
+global-styling: # Libraries needed in all pages.
+  css:
+    theme:
+      'https://fonts.googleapis.com/css?family=Work+Sans:400,300,600,400italic,700': { type: external }
+      'https://fonts.googleapis.com/css?family=Great+Vibes': { type: external }
+      #'https://fonts.googleapis.com/css?family=Great+Vibes|Open+Sans|Tangerine': { type: external }
+      css/acw.css: {}
+      #css/blue.css: {}
+
+  js:
+    js/scripts.js: {} 
+    
+  fonts:
+    css:
+      theme:
+        '//fonts.googleapis.com/css?family=Great+Vibes|Open+Sans|Tangerine:300italic,400,300,700|Open+Sans:300italic,400,300': { type: external, minified: true }
+

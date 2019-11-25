@@ -1,0 +1,17 @@
+<!-- Banner -->
+<div class="fh5co-hero" style="background-image: url({{ file_url(content.field_image['#items'].entity.uri.value) }});" data-stellar-background-ratio="0.5">
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8 col-md-offset-2 col-sm-12 col-sm-offset-0 col-xs-12 col-xs-offset-0 text-center fh5co-table">
+        <div class="fh5co-intro fh5co-table-cell">
+          <h1 class="text-center">{{ content.field_title.0 }}</h1>
+          {{ content.field_description.0 }}
+		  {% if content.field_call_to_action.0|render is not empty %}
+			<div class="button">{{ content.field_call_to_action.0 }}</div>
+		  {% endif %}	
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

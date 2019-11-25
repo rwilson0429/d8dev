@@ -1,0 +1,195 @@
+/**
+ * Place your custom styles here for acw.com
+ */
+* {
+    box-sizing: border-box;
+}
+
+/* unvisited link */
+a:link {
+    color: red;
+}
+
+/* visited link */
+a:visited {
+    color: green;
+}
+
+/* mouse over link */
+a:hover {
+    color: hotpink;
+}
+
+/* selected link */
+a:active {
+    color: blue;
+}
+
+.logo img {
+	max-width: 10em;
+	max-width: 7vw;
+	
+}
+
+/* .navbar-default {
+  background-color: #1e7d4f;
+  background-image: none;
+  background-repeat: no-repeat;
+  color: #fff;
+ } */
+
+/*  reset the default navbar brand padding [it's 15px by default] */
+.navbar-brand {
+    padding: 0;
+}
+
+/* transfer the navbar brand padding to the image inside it, also make it 100% height */
+.navbar-brand  >img {
+    padding: 15px;  /* this value is optional, increasing or decreasing it is up to you. */
+    height: 100%;
+}
+
+.navbar-default {
+  background-color: #f8f8f8;
+  border-color: #e7e7e7;
+}
+.navbar-default .navbar-brand {
+  color: #777;
+}
+.navbar-default .navbar-brand:hover,
+.navbar-default .navbar-brand:focus {
+  color: #5e5e5e;
+  background-color: transparent;
+}
+.navbar-default .navbar-text {
+  color: #777;
+}
+.navbar-default .navbar-nav > li > a {
+  color: #777;
+}
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > li > a:focus {
+  color: #333;
+  background-color: transparent;
+}
+.navbar-default .navbar-nav > .active > a,
+.navbar-default .navbar-nav > .active > a:hover,
+.navbar-default .navbar-nav > .active > a:focus {
+  color: #555;
+  background-color: #e7e7e7;
+}
+.navbar-default .navbar-nav > .disabled > a,
+.navbar-default .navbar-nav > .disabled > a:hover,
+.navbar-default .navbar-nav > .disabled > a:focus {
+  color: #ccc;
+  background-color: transparent;
+}
+.navbar-default .navbar-toggle {
+  border-color: #ddd;
+}
+.navbar-default .navbar-toggle:hover,
+.navbar-default .navbar-toggle:focus {
+  background-color: #ddd;
+}
+.navbar-default .navbar-toggle .icon-bar {
+  background-color: #888;
+}
+.navbar-default .navbar-collapse,
+.navbar-default .navbar-form {
+  border-color: #e7e7e7;
+}
+.navbar-default .navbar-nav > .open > a,
+.navbar-default .navbar-nav > .open > a:hover,
+.navbar-default .navbar-nav > .open > a:focus {
+  color: #555;
+  background-color: #e7e7e7;
+}
+
+
+ 
+video {
+    width: 100%;
+    height: auto;
+}
+
+/*Content Panel with Color Header*/
+	.panel-colored {
+	margin-bottom: 20px;
+	background-color: #f4f4f4;
+	border: 1px solid transparent;
+	border-radius: 5px;
+	-webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+	border-color: #86b998;
+	}
+	.panel-colored > .panel-heading {
+	background-color: #66a67c;
+	border-color: #a6ccb4;
+	color: #FFFFFF;
+	}
+	.panel-heading {
+	padding: 10px 15px;
+	border-bottom: 1px solid transparent;
+	border-top-right-radius: 4px;
+	border-top-left-radius: 4px;
+	}
+	.panel-title {
+	font-size: 20px;
+	margin-top: 0;
+	margin-bottom: 0;
+	font-size: 16px;
+	color: inherit;
+	}
+	.panel-body {
+	padding: 15px;
+	}
+	.panel-footer {
+	background: #bc5e43;
+	border-color: #e4bfb4;
+	color: #FFFFFF;
+	padding: 10px 15px;
+	border-top: 1px solid #d8d8d8;
+	border-bottom-right-radius: 4px;
+	border-bottom-left-radius: 4px;
+	}
+/*End Content Panel Style*/
+
+/* Create a Parallax Effect */
+	.bgimg-1, .bgimg-2, .bgimg-3 {
+		background-attachment: fixed;
+		background-position: center;
+		background-repeat: no-repeat;
+		background-size: cover;
+	}
+
+	/* First image (Logo. Full height) */
+	.bgimg-1 {
+		background-image: url('/w3images/parallax1.jpg');
+		min-height: 100%;
+	}
+
+	/* Second image (Portfolio) */
+	.bgimg-2 {
+		background-image: url("/w3images/parallax2.jpg");
+		min-height: 400px;
+	}
+
+	/* Third image (Contact) */
+	.bgimg-3 {
+		background-image: url("/w3images/parallax3.jpg");
+		min-height: 400px;
+	}
+
+	.w3-wide {letter-spacing: 10px;}
+	.w3-hover-opacity {cursor: pointer;}
+
+	/* Turn off parallax scrolling for tablets and phones */
+	@media only screen and (max-device-width: 1024px) {
+		.bgimg-1, .bgimg-2, .bgimg-3 {
+			background-attachment: scroll;
+		}
+	}
+	
+	h3 {
+		color: blue;
+	}

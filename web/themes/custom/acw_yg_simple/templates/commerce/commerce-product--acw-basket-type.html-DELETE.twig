@@ -1,0 +1,41 @@
+{#
+/**
+ * @file
+ *
+ * Default product template.
+ *
+ * Available variables:
+ * - attributes: HTML attributes for the wrapper.
+ * - product: The rendered product fields.
+ *   Use 'product' to print them all, or print a subset such as
+ *   'product.title'. Use the following code to exclude the
+ *   printing of a given field:
+ *   @code
+ *   {{ product|without('title') }}
+ *   @endcode
+ * - product_entity: The product entity.
+ * - product_url: The product URL.
+ *
+ * @ingroup themeable
+ */
+#}
+<pre>{{ dump(product|keys) }}</pre>
+
+ 
+  
+	<div class="row">
+	  <div class="col-md-4">
+			{{ product.variation_field_image }}
+	  </div>
+	  <div class="col-md-8">"
+		  {{ product.variation_field_product_variation_descript }}
+			<!-- {{- product|without('variation_attributes') -}} -->
+	  </div>	
+    </div>  
+
+<!--       <div class="col-md-7">
+        <img src="/sites/acranberryweekend.com/files/public/media/images/2018-12/gift-basket-image4.png" alt="Free HTML5 by FreeHTML5.co" class="img-responsive">
+      </div> -->
+    
+	
+

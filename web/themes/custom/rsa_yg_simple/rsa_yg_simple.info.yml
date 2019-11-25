@@ -1,0 +1,22 @@
+name : RSA YG Simple
+type: theme
+description: 'RSA Consulting Group theme'
+core: 8.x 
+base theme: yg_simple
+screenshot: screenshot.png
+# Defines libraries group in which we can add css/js
+libraries:
+  - rsa_yg_simple/global-styling
+  - yg_simple/fontawesome
+
+#Regions
+regions:
+  header: 'Header'
+  primary_menu: 'Primary Menu'
+  content: 'Content'
+  slider: 'Slider'
+  banner: 'Banner'
+  sidebar_first: 'Sidebar first'
+  sidebar_second: 'Sidebar second'
+  footer_menu: 'Footer Menu'
+  disable_block: 'Disable Blocks'

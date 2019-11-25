@@ -1,0 +1,69 @@
+  <div id="fh5co-wrap">
+    {% set url = url('<current>') %}
+    {% if 'user' in url|render|render %}
+      <header id="fh5co-header" style="background-color:#000;">
+    {% else %}  
+      <header id="fh5co-header">
+ {% endif %}
+    <div class="container-fluid">
+	  <div class="row">
+      <!-- Brand and toggle get grouped for better mobile display -->
+		  <div class="navbar-header col-md-4">
+			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#yg-simple-navbar-collapse"> <span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> </button>
+			<a class="navbar-brand page-scroll" href="{{ path('<front>') }}"><img src="{{ logopath }}" alt="{{ 'Home'|t }}" title="{{ 'Home'|t }}"></a>
+			<h1>{{site_name}}<h1> 
+			</div>
+		  <div class="region region-primary-menu col-md-8">	
+			<!-- Collect the nav links, forms, and other content for toggling -->
+			  {{ page.primary_menu }}
+			<!-- /.navbar-collapse -->
+		  </div>
+	  </div>
+    </div>
+    </header>
+    <!-- Content -->
+	{{ page.content }}
+   </div> 
+<!-- END fh5co-wrap -->
+  <footer id="fh5co-footer">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4">
+          <h3>{{ footer_title }}</h3>
+            {% if desc %}
+              {% autoescape 'html' %}
+                {{ desc|raw }}
+              {% endautoescape %}
+            {% endif %}
+        </div>
+        <div class="col-md-3 col-md-push-1">
+          {{ page.footer_menu }}
+        </div>
+        <div class="col-md-3 col-md-push-1">
+          <h3>{{ social_title }}</h3>
+          <ul class="fh5co-social">
+            {% if twitter_url|render is not empty %}
+              <li><a href="{{ twitter_url }}"><i class="icon-twitter"></i> <span>Twitter</span></a></li>
+            {% endif %} 
+            {% if facebook_url|render is not empty %}
+              <li><a href="{{ facebook_url }}"><i class="icon-facebook"></i> <span>Facebook</span></a></li>
+            {% endif %}
+            {% if instagram_url|render is not empty %}
+              <li><a href="{{ instagram_url }}"><i class="icon-instagram"></i> <span>Instagram</span></a></li>
+            {% endif %}
+            {% if google_plus_url|render is not empty %}
+              <li><a href="{{ google_plus_url }}"><i class="icon-google"></i> <span>Google Plus</span></a></li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12 fh5co-copyright text-center">
+            <p>
+           <small class="block">&copy; 2018 YG Simple. All Rights Reserved.</small>
+           <small class="block">Designed by <a href="http://freehtml5.co/" target="_blank">FreeHTML5.co</a> Druapl theme by <a href="https://www.drupaldevelopersstudio.com/" target="_blank">Drupal Developers Studio</a></small>
+         </p>
+        </div>
+      </div>
+    </div>
+  </footer>

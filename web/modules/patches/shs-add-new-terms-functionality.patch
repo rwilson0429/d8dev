@@ -1,0 +1,415 @@
+diff --git a/js/models/WidgetModel.js b/js/models/WidgetModel.js
+index d62b4f4..2c299d9 100644
+--- a/js/models/WidgetModel.js
++++ b/js/models/WidgetModel.js
+@@ -31,6 +31,11 @@
+        */
+       defaultValue: '_none',
+ 
++      /**
++       * The new item that was created.
++       */
++      createValue: null,
++
+       /**
+        * Position of widget in app.
+        *
+diff --git a/js/views/AppView.js b/js/views/AppView.js
+index 8693214..dfed10a 100644
+--- a/js/views/AppView.js
++++ b/js/views/AppView.js
+@@ -65,9 +65,6 @@
+           parents: parents
+         }));
+       });
+-//      $.each(app.getConfig('parents'), function (index, item) {
+-//        // Add WidgetModel for each parent.
+-//      });
+ 
+       app.collection.trigger('initialize:shs');
+ 
+@@ -127,6 +124,19 @@
+           // Use value of parent widget (which is the id of the model ;)).
+           value = widgetModel.get('id');
+         }
++        else if (widgetModel.get('createValue')) {
++          // Add the created item to the original select item.
++          var options = $("option", app.$el).map(function () {
++            return $(this).val();
++          }).get();
++          if ($.inArray(value, options) === -1) {
++            var item = widgetModel.get('createValue');
++            app.$el.append($("<option/>").val(item.tid).text(item.name));
++            // We can now reset our widget model to the new tid.
++              widgetModel.set('createValue', null);
++            widgetModel.set('defaultValue', item.tid);
++          }
++        }
+       }
+       // Set the updated value.
+       app.$el.val(value).trigger({
+diff --git a/js/views/ContainerView.js b/js/views/ContainerView.js
+index 2ec8218..8e6a25c 100644
+--- a/js/views/ContainerView.js
++++ b/js/views/ContainerView.js
+@@ -42,7 +42,7 @@
+       }
+ 
+       this.collection = new Drupal.shs.WidgetCollection({
+-        url: Drupal.url(this.app.getConfig('baseUrl') + '/' + this.app.getConfig('fieldName') + '/' + this.app.getConfig('bundle'))
++        url: Drupal.url.toAbsolute(this.app.getConfig('baseUrl') + '/' + this.app.getConfig('fieldName') + '/' + this.app.getConfig('bundle'))
+       });
+       this.collection.reset();
+ 
+@@ -119,13 +119,21 @@
+       container.collection.remove(models);
+ 
+       var anyValue = container.app.getSetting('anyValue');
+-      if (value !== anyValue) {
++      var createValue = container.app.getSetting('createValue');
++
++      if (value === createValue && widgetModel.get('createValue')) {
++        var item = widgetModel.get('createValue');
++        value = item.tid;
++      }
++
++      if ((value !== anyValue) && (value !== createValue)) {
+         // Add new model with current selection.
+         container.collection.add(new Drupal.shs.classes[container.app.getConfig('fieldName')].models.widget({
+           id: value,
+           level: widgetModel.get('level') + 1
+         }));
+       }
++
+       if (value === anyValue && widgetModel.get('level') > 0) {
+         // Use value of parent widget (which is the id of the model ;)).
+         value = widgetModel.get('id');
+diff --git a/js/views/WidgetView.js b/js/views/WidgetView.js
+index da6ac0a..d3dfb32 100644
+--- a/js/views/WidgetView.js
++++ b/js/views/WidgetView.js
+@@ -62,10 +62,10 @@
+     render: function () {
+       var widget = this;
+       widget.$el.prop('id', widget.container.app.$el.prop('id') + '-shs-' + widget.container.model.get('delta') + '-' + widget.model.get('level'))
+-              .addClass('shs-select')
+-              // Add core class to apply default styles to the element.
+-              .addClass('form-select')
+-              .hide();
++          .addClass('shs-select')
++          // Add core class to apply default styles to the element.
++          .addClass('form-select')
++          .hide();
+       if (widget.model.get('dataLoaded')) {
+         widget.$el.show();
+       }
+@@ -120,9 +120,9 @@
+         var label = false;
+         if (labels.hasOwnProperty(widget.model.get('level')) && (label = labels[widget.model.get('level')]) !== false) {
+           $('<label>')
+-                  .prop('for', widget.$el.prop('id'))
+-                  .text(label)
+-                  .appendTo($container);
++              .prop('for', widget.$el.prop('id'))
++              .text(label)
++              .appendTo($container);
+         }
+       }
+ 
+@@ -138,6 +138,71 @@
+         $container.append(widget.$el.fadeIn(widget.container.app.getConfig('display.animationSpeed')));
+       }
+ 
++      var createValue = widget.model.get('createValue');
++      if (widget.$el.val() && widget.$el.val() === createValue || widget.$el.val() === widget.model.defaultValue) {
++        var create_item_input_id = 'shs-widget-create-new-item-' + widget.container.app.getConfig('fieldName') + '-delta-' + widget.container.model.get('delta');
++        $container.append($('<input>')
++            .on('keyup', function (e) {
++              if (e.keyCode === 13) {
++                // Do something
++                $('#' + create_item_input_id + '_button').trigger('click');
++                e.preventDefault();
++                return false;
++              }
++            })
++            .attr('type', 'text')
++            .attr('id', create_item_input_id)
++            .attr('name', 'create_new_item')
++            .attr('class', 'text-full form-text')
++            .attr('placeholder', Drupal.t("New term"))
++        ).append($('<button>')
++            .attr('id', create_item_input_id + '_button')
++            .attr('class', 'button')
++            .html(Drupal.t('Add'))
++            .on('click', function (e) {
++              var value = $('#' + create_item_input_id).val();
++
++              // Get the langcode value if present.
++              var $language = $('select[name="langcode[0][value]"]');
++              var langcode = 'und';
++              if ($language) {
++                langcode = $language.val();
++              }
++
++              $.ajax({
++                url: Drupal.url.toAbsolute(widget.container.app.getConfig('createUrl')),
++                type: 'POST',
++                dataType: 'json',
++                async: false,
++                contentType: 'application/json',
++                Accept: 'application/json',
++                data: JSON.stringify({
++                  arguments: {
++                    value: value,
++                    bundle: widget.container.app.getConfig('bundle'),
++                    entity_id: widget.model.get('id'),
++                    langcode: langcode
++                  }
++                })
++              }).then(function (data) {
++                if (data !== 'null') {
++                  // Force a reload.
++                  widget.model.set('dataLoaded', false);
++
++                  // Update create value of attached model.
++                  widget.model.set('createValue', data);
++
++                  // Fire events.
++                  widget.container.collection.trigger('update:selection', widget.model, widget.model.get('defaultValue'), widget);
++                }
++              });
++
++              e.preventDefault();
++              return false;
++            })
++        );
++      }
++
+       widget.model.set('dataLoaded', true);
+       // Return self for chaining.
+       return widget;
+diff --git a/shs.routing.yml b/shs.routing.yml
+index cf93fd9..f4e602e 100644
+--- a/shs.routing.yml
++++ b/shs.routing.yml
+@@ -6,3 +6,11 @@ shs.term_data:
+     entity_id: null
+   requirements:
+     _permission: 'access content'
++
++shs.create_term:
++  path: '/shs-create-term'
++  defaults:
++    _controller: '\Drupal\shs\Controller\ShsController::createTerm'
++  requirements:
++    _csrf_token: 'TRUE'
++    _custom_access:  '\Drupal\shs\Controller\ShsController::createTermAccess'
+diff --git a/src/Controller/ShsController.php b/src/Controller/ShsController.php
+index e9e4616..f204f88 100644
+--- a/src/Controller/ShsController.php
++++ b/src/Controller/ShsController.php
+@@ -2,11 +2,15 @@
+ 
+ namespace Drupal\shs\Controller;
+ 
++use Drupal\Core\Access\AccessResult;
+ use Drupal\Core\Controller\ControllerBase;
+ use Drupal\Core\Language\LanguageInterface;
++use Drupal\Core\Session\AccountInterface;
+ use Drupal\shs\Cache\ShsCacheableJsonResponse;
+ use Drupal\shs\Cache\ShsTermCacheDependency;
+ use Symfony\Component\DependencyInjection\ContainerInterface;
++use Symfony\Component\HttpFoundation\JsonResponse;
++use Symfony\Component\HttpFoundation\Request;
+ 
+ /**
+  * Controller for getting taxonomy terms.
+@@ -98,4 +102,93 @@ class ShsController extends ControllerBase {
+     return $response;
+   }
+ 
++  /**
++   * Create term data.
++   *
++   * @param \Symfony\Component\HttpFoundation\Request $request
++   *
++   * @return JsonResponse
++   *   Json response.
++   */
++  public function createTerm(Request $request) {
++
++    $result = NULL;
++
++    // Obtain the data from the json.
++    $data = json_decode($request->getContent());
++    $value = $data->arguments->value;
++    $bundle = $data->arguments->bundle;
++    $entity_id = $data->arguments->entity_id;
++    $langcode = $data->arguments->langcode;
++
++    if (!$langcode) {
++      $langcode = \Drupal::languageManager()->getCurrentLanguage()->getId();
++    }
++
++    $entity_manager = \Drupal::getContainer()->get('entity.manager');
++    $storage = $entity_manager->getStorage('taxonomy_term');
++
++    // Try to find the term.
++    $found = NULL;
++    $terms = $storage->loadTree($bundle, $entity_id, 1, TRUE);
++    foreach ($terms as $term) {
++      if ($term->hasTranslation($langcode)) {
++        $term = $term->getTranslation($langcode);
++      }
++      else {
++        $langcode = $term->default_langcode;
++      }
++
++      if (strcasecmp($term->getName(), $value) === 0) {
++        $found = $term;
++        break;
++      }
++    }
++
++    if (!$found) {
++      $term = $storage->create([
++        'vid' => $bundle,
++        'langcode' => $langcode,
++        'name' => $value,
++        'parent' => [$entity_id],
++      ]);
++      $term->save();
++    }
++    else {
++      $term = $found;
++    }
++
++    $result = (object) [
++      'tid' => $term->id(),
++      'name' => $term->getName(),
++      'description__value' => $term->getDescription(),
++      'langcode' => $langcode,
++      'hasChildren' => shs_term_has_children($term->id()),
++    ];
++
++    $response = new JsonResponse();
++    $response->setData($result);
++
++    return $response;
++  }
++
++  /**
++   * Checks access for a specific request.
++   *
++   * @param \Drupal\Core\Session\AccountInterface $account
++   *   Run access checks for this account.
++   *
++   * @return bool
++   */
++  public function createTermAccess(AccountInterface $account) {
++    $request = \Drupal::request();
++    $data = json_decode($request->getContent());
++    $bundle = $data->arguments->bundle;
++
++    return AccessResult::allowedIfHasPermissions($account, [
++      "edit terms in {$bundle}",
++      'administer taxonomy',
++    ], 'OR');
++  }
++
+ }
+diff --git a/src/Plugin/Field/FieldWidget/OptionsShsWidget.php b/src/Plugin/Field/FieldWidget/OptionsShsWidget.php
+index 3bb51cf..f75f7cf 100644
+--- a/src/Plugin/Field/FieldWidget/OptionsShsWidget.php
++++ b/src/Plugin/Field/FieldWidget/OptionsShsWidget.php
+@@ -3,11 +3,14 @@
+ namespace Drupal\shs\Plugin\Field\FieldWidget;
+ 
+ use Drupal\Component\Utility\Html;
++use Drupal\Core\Entity\FieldableEntityInterface;
+ use Drupal\Core\Field\FieldDefinitionInterface;
+ use Drupal\Core\Field\FieldItemListInterface;
+ use Drupal\Core\Field\Plugin\Field\FieldWidget\OptionsSelectWidget;
+ use Drupal\Core\Form\FormStateInterface;
+ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
++use Drupal\Core\Render\BubbleableMetadata;
++use Drupal\Core\Url;
+ use Drupal\shs\WidgetDefaults;
+ use Symfony\Component\DependencyInjection\ContainerInterface;
+ 
+@@ -91,7 +94,6 @@ class OptionsShsWidget extends OptionsSelectWidget implements ContainerFactoryPl
+       '#title' => t('Allow creating new items'),
+       '#default_value' => $this->getSetting('create_new_items'),
+       '#description' => t('Allow users to create new items of the source bundle.'),
+-      '#disabled' => TRUE,
+     ];
+     $element['create_new_levels'] = [
+       '#type' => 'checkbox',
+@@ -103,7 +105,6 @@ class OptionsShsWidget extends OptionsSelectWidget implements ContainerFactoryPl
+           ':input[name="fields[' . $field_name . '][settings_edit_form][settings][create_new_items]"]' => ['checked' => TRUE],
+         ],
+       ],
+-      '#disabled' => TRUE,
+     ];
+     $element['force_deepest'] = [
+       '#type' => 'checkbox',
+@@ -177,10 +178,23 @@ class OptionsShsWidget extends OptionsSelectWidget implements ContainerFactoryPl
+       $parents = $this->widgetDefaults->getParentDefaults($default_value, $settings_additional['anyValue'], $this->fieldDefinition->getItemDefinition()->getSetting('target_type'), $cardinality);
+     }
+ 
++    // Generate a token for our ajax url.
++    // We need to run this through a render function because Drupal.url generates
++    // a placeholder token.
++    $urlBubbleable = Url::fromRoute('shs.create_term')->toString(TRUE);
++    $urlRender = array(
++      '#markup' => $urlBubbleable->getGeneratedUrl(),
++    );
++    BubbleableMetadata::createFromRenderArray($urlRender)
++      ->merge($urlBubbleable)->applyTo($urlRender);
++    $url = (string) \Drupal::service('renderer')->renderPlain($urlRender);
++
++
+     $settings_shs = [
+       'settings' => $this->getSettings() + $settings_additional,
+       'bundle' => $bundle,
+       'baseUrl' => 'shs-term-data',
++      'createUrl' => $url,
+       'cardinality' => $cardinality,
+       'parents' => $parents,
+       'defaultValue' => $default_value,
+@@ -319,4 +333,35 @@ class OptionsShsWidget extends OptionsSelectWidget implements ContainerFactoryPl
+     return $options[$value];
+   }
+ 
++  /**
++   * Returns the array of options for the widget.
++   *
++   * @param \Drupal\Core\Entity\FieldableEntityInterface $entity
++   *   The entity for which to return options.
++   *
++   * @return array
++   *   The array of options for the widget.
++   */
++  protected function getOptions(FieldableEntityInterface $entity) {
++    if (!isset($this->options)) {
++      $options = parent::getOptions($entity);
++
++      // Add a create option if the widget needs one.
++      $new_label = $this->getCreateLabel();
++      if ($new_label) {
++        $options['_create'] = $new_label;
++      }
++
++      $this->options = $options;
++    }
++    return $this->options;
++  }
++
++  /**
++   * Returns the label for creating a new term.
++   * @return string
++   */
++  public function getCreateLabel() {
++    return (string) t('Create...');
++  }
+ }

@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * @file
+ * Bootstrap sub-theme.
+ *
+ * Place your custom PHP code in this file.
+ */
+ 
+ /* 
+ *Using the SVG icons provided by Drupal Commerce, you can change the icon image color.  See: https://www.drupal.org/project/commerce/issues/2910184#comment-12583432
+*/
+function mofa_bootstrap_preprocess_commerce_cart_block(&$variables) {
+  // Load SVG icon instead of image by default
+  $svg = file_get_contents(drupal_get_path('module', 'commerce') . '/icons/ffffff/cart.svg');
+  $variables['icon'] = [
+    '#type' => 'inline_template',
+    '#template' => $svg,
+  ];
+  // Add a library asset when the cart block is displayed so I can change the colour of the icon via css
+  $variables['#attached']['library'][] = 'bootstrap_subtheme   /cart-block';
+}

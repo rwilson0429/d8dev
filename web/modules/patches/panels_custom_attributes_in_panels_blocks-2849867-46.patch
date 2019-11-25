@@ -1,0 +1,654 @@
+diff --git a/config/schema/panels.schema.yml b/config/schema/panels.schema.yml
+index 8adb932..af4e635 100644
+--- a/config/schema/panels.schema.yml
++++ b/config/schema/panels.schema.yml
+@@ -20,4 +20,14 @@ display_variant.plugin.panels_variant:
+     storage_id:
+       type: string
+       label: Storage Id
+-
++    css_classes:
++      type: sequence
++      label: The list of the display variant CSS classes
++      sequence:
++      - type: string
++    html_id:
++      type: string
++      label: The HTML Id. of the display variant
++    css_styles:
++      type: string
++      label: The inline CSS styles of the display variant
+diff --git a/panels_ipe/src/Form/PanelsIPEBlockPluginForm.php b/panels_ipe/src/Form/PanelsIPEBlockPluginForm.php
+index 8d8a8b9..9d83065 100644
+--- a/panels_ipe/src/Form/PanelsIPEBlockPluginForm.php
++++ b/panels_ipe/src/Form/PanelsIPEBlockPluginForm.php
+@@ -3,6 +3,7 @@
+ namespace Drupal\panels_ipe\Form;
+ 
+ use Drupal\Component\Plugin\PluginManagerInterface;
++use Drupal\Component\Utility\Html;
+ use Drupal\Core\Block\BlockPluginInterface;
+ use Drupal\Core\Form\FormBase;
+ use Drupal\Core\Form\FormState;
+@@ -12,6 +13,7 @@
+ use Drupal\Core\Plugin\ContextAwarePluginInterface;
+ use Drupal\Core\Render\Element;
+ use Drupal\Core\Render\RendererInterface;
++use Drupal\panels\Form\PanelsStyleTrait;
+ use Drupal\panels\Plugin\DisplayVariant\PanelsDisplayVariant;
+ use Drupal\panels_ipe\PanelsIPEBlockRendererTrait;
+ use Drupal\user\SharedTempStoreFactory;
+@@ -28,6 +30,7 @@ class PanelsIPEBlockPluginForm extends FormBase {
+   use ContextAwarePluginAssignmentTrait;
+ 
+   use PanelsIPEBlockRendererTrait;
++  use PanelsStyleTrait;
+ 
+   /**
+    * @var \Drupal\Component\Plugin\PluginManagerInterface $blockManager
+@@ -184,6 +187,7 @@ public function buildForm(array $form, FormStateInterface $form_state, $plugin_i
+       '#required' => TRUE,
+       '#default_value' => $region,
+     ];
++    $form['flipper']['front']['settings'] += $this->getCSSStyleForm($block_config, TRUE);
+ 
+     // Add an add button, which is only used by our App.
+     $form['submit'] = [
+@@ -274,6 +278,9 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
+     // Set the block region appropriately.
+     $block_config = $block_instance->getConfiguration();
+     $block_config['region'] = $form_state->getValue(array('settings', 'region'));
++    $block_config['css_classes'] = preg_split('/\s+/', trim($form_state->getValue(['settings', 'style_settings', 'css_classes'])));
++    $block_config['html_id'] = $form_state->getValue(['settings', 'style_settings', 'html_id']);
++    $block_config['css_styles'] = $form_state->getValue(['settings', 'style_settings', 'css_styles']);
+ 
+     // Determine if we need to update or add this block.
+     if ($uuid = $form_state->getValue('uuid')) {
+@@ -296,6 +303,19 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
+     // Add our data attribute for the Backbone app.
+     $build['#attributes']['data-block-id'] = $uuid;
+ 
++    // Add CSS classes.
++    foreach ($block_config['css_classes'] as $class) {
++      $build['#attributes']['class'][] = Html::cleanCssIdentifier($class);
++    }
++    // Add HTML Id.
++    if (!empty($block_config['html_id'])) {
++      $build['#attributes']['id'] = Html::getId($block_config['html_id']);
++    }
++    // Add CSS styles.
++    if (!empty($block_config['css_styles'])) {
++      $build['#attributes']['style'] = $block_config['css_styles'];
++    }
++
+     $plugin_definition = $block_instance->getPluginDefinition();
+ 
+     $block_model = [
+@@ -342,6 +362,22 @@ public function submitPreview(array &$form, FormStateInterface $form_state) {
+     // Gather a render array for the block.
+     $build = $this->buildBlockInstance($block_instance, $this->panelsDisplay);
+ 
++    // Add CSS classes.
++    $css_classes = preg_split('/\s+/', trim($form_state->getValue(['settings', 'style_settings', 'css_classes'])));
++    foreach ($css_classes as $class) {
++      $build['#attributes']['class'][] = Html::cleanCssIdentifier($class);
++    }
++    // Add HTML Id.
++    $html_id = $form_state->getValue(['settings', 'style_settings', 'html_id']);
++    if (!empty($html_id)) {
++      $build['#attributes']['id'] = Html::getId($html_id);
++    }
++    // Add CSS styles.
++    $css_styles = $form_state->getValue(['settings', 'style_settings', 'css_styles']);
++    if (!empty($css_styles)) {
++      $build['#attributes']['style'] = $css_styles;
++    }
++
+     // Replace any nested form tags from the render array.
+     $build['content']['#post_render'][] = function ($html, array $elements) {
+       $search = ['<form', '</form>'];
+diff --git a/panels_ipe/src/PanelsIPEBlockRendererTrait.php b/panels_ipe/src/PanelsIPEBlockRendererTrait.php
+index 6d5d36c..41aee03 100644
+--- a/panels_ipe/src/PanelsIPEBlockRendererTrait.php
++++ b/panels_ipe/src/PanelsIPEBlockRendererTrait.php
+@@ -49,7 +49,6 @@ protected function buildBlockInstance($block_instance, $panels_display) {
+       '#derivative_plugin_id' => $block_instance->getDerivativeId(),
+       'content' => $content,
+     ];
+-
+     return $build;
+   }
+ 
+diff --git a/panels_ipe/tests/src/FunctionalJavascript/PageManagerIntegrationTest.php b/panels_ipe/tests/src/FunctionalJavascript/PageManagerIntegrationTest.php
+index 87d6dfc..1dc4ba3 100644
+--- a/panels_ipe/tests/src/FunctionalJavascript/PageManagerIntegrationTest.php
++++ b/panels_ipe/tests/src/FunctionalJavascript/PageManagerIntegrationTest.php
+@@ -2,12 +2,15 @@
+ 
+ namespace Drupal\Tests\panels_ipe\FunctionalJavascript;
+ 
++use Drupal\panels\Tests\PanelsTestTrait;
++
+ /**
+  * Tests the JavaScript functionality of Panels IPE with PageManager.
+  *
+  * @group panels
+  */
+ class PageManagerIntegrationTest extends PanelsIPETestBase {
++  use PanelsTestTrait;
+ 
+   /**
+    * {@inheritdoc}
+@@ -87,4 +90,69 @@ public function testUserEditSession() {
+     $this->assertSession()->elementExists('css', '.layout--onecol');
+   }
+ 
++  /**
++   * Test IPE with Panels block preview and custom CSS properties.
++   */
++  public function testBlockPreviewAndCustomCSSProperties() {
++    $page = $this->getSession()->getPage();
++    $this->visitIPERoute();
++    // Visit IPE page and add block. (@see PanelsIPETestTrait addBlock() method)
++    $this->clickAndWait('[data-tab-id="manage_content"]');
++    $this->waitUntilNotPresent('.ipe-icon-loading');
++    $this->clickAndWait('[data-category="System"]');
++    $this->getSession()->executeScript("jQuery('" . '[data-plugin-id="system_powered_by_block"]' . "')[0].click()");
++    $this->waitUntilNotPresent('.ipe-icon-loading');
++    $this->waitUntilVisible('.ipe-form form');
++    $this->clickAndWait('[data-drupal-selector="edit-settings-style-settings"]');
++    // Generate random HTML Id., CSS classes and styles.
++    $css = $this->generateCSSProperties();
++    // Fill settings fields.
++    $page->fillField('settings[style_settings][html_id]', $css['html_id']);
++    $page->fillField('settings[style_settings][css_classes]', $css['css_classes']);
++    $page->fillField('settings[style_settings][css_styles]', $css['css_style']);
++    // Click preview button and check result.
++    $this->clickAndWait('[data-drupal-selector="edit-preview"]');
++    $this->assertSession()->elementExists('css', '#' . $css['html_id']);
++    $this->assertSession()->elementExists('css', '.' . str_replace(' ', '.', $css['css_classes']));
++    $this->assertSession()->elementExists('css', '[style*="' . $css['css_style'] . '"]');
++    // Click preview button and re-fill settings form with new values.
++    $this->clickAndWait('[data-drupal-selector="edit-preview"]');
++    $this->clickAndWait('[data-drupal-selector="edit-settings-style-settings"]');
++    $css = $this->generateCSSProperties();
++    $page->fillField('settings[style_settings][html_id]', $css['html_id']);
++    $page->fillField('settings[style_settings][css_classes]', $css['css_classes']);
++    $page->fillField('settings[style_settings][css_styles]', $css['css_style']);
++    $this->saveBlockConfigurationForm();
++    $this->waitUntilNotPresent('.ipe-icon-loading');
++    $this->clickAndWait('[data-tab-id="save"]');
++    $this->assertSession()->elementExists('css', '#' . $css['html_id']);
++    $this->assertSession()->elementExists('css', '.' . str_replace(' ', '.', $css['css_classes']));
++    $this->assertSession()->elementExists('css', '[style*="' . $css['css_style'] . '"]');
++  }
++
++  /**
++   * Test IPE with Panels block edit and custom CSS properties.
++   */
++  public function testBlockEditAndCustomCSSProperties() {
++    $page = $this->getSession()->getPage();
++    $this->visitIPERoute();
++    $this->addBlock('System', 'system_breadcrumb_block');
++    $this->waitUntilNotPresent('.ipe-icon-loading');
++    $this->clickAndWait('[data-tab-id="save"]');
++    // Edit block settings and fill style-settings with random values.
++    $this->clickAndWait('[data-tab-id="edit"]');
++    $this->clickAndWait('.block-system-breadcrumb-block [data-action-id="configure"]');
++    $this->clickAndWait('[data-drupal-selector="edit-settings-style-settings"]');
++    // Generate random HTML Id., CSS classes and styles.
++    $css = $this->generateCSSProperties();
++    $page->fillField('settings[style_settings][html_id]', $css['html_id']);
++    $page->fillField('settings[style_settings][css_classes]', $css['css_classes']);
++    $page->fillField('settings[style_settings][css_styles]', $css['css_style']);
++    $this->saveBlockConfigurationForm();
++    $this->clickAndWait('[data-tab-id="save"]');
++    $this->assertSession()->elementExists('css', '#' . $css['html_id']);
++    $this->assertSession()->elementExists('css', '.' . str_replace(' ', '.', $css['css_classes']));
++    $this->assertSession()->elementExists('css', '[style*="' . $css['css_style'] . '"]');
++  }
++
+ }
+diff --git a/src/Form/PanelsBlockConfigureFormBase.php b/src/Form/PanelsBlockConfigureFormBase.php
+index 6755687..4ca71dd 100644
+--- a/src/Form/PanelsBlockConfigureFormBase.php
++++ b/src/Form/PanelsBlockConfigureFormBase.php
+@@ -18,6 +18,7 @@
+ 
+   use ContextAwarePluginAssignmentTrait;
+   use CachedValuesGetterTrait;
++  use PanelsStyleTrait;
+ 
+   /**
+    * Tempstore factory.
+@@ -116,6 +117,8 @@ public function buildForm(array $form, FormStateInterface $form_state, $tempstor
+     $form_state->setTemporaryValue('gathered_contexts', $contexts);
+ 
+     $this->block = $this->prepareBlock($block_id);
++    $settings = $this->block->getConfiguration();
++    $form += $this->getCSSStyleForm($settings);
+     $form_state->set('machine_name', $machine_name);
+     $form_state->set('block_id', $this->block->getConfiguration()['uuid']);
+ 
+@@ -136,7 +139,6 @@ public function buildForm(array $form, FormStateInterface $form_state, $tempstor
+       '#default_value' => $this->variantPlugin->getRegionAssignment($this->block->getConfiguration()['uuid']),
+       '#required' => TRUE,
+     ];
+-
+     $form['actions']['submit'] = [
+       '#type' => 'submit',
+       '#value' => $this->submitText(),
+@@ -177,6 +179,9 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
+ 
+     $configuration = $this->block->getConfiguration();
+     $configuration['region'] = $form_state->getValue('region');
++    $configuration['css_classes'] = preg_split('/\s+/', trim($form_state->getValue('css_classes')));
++    $configuration['html_id'] = $form_state->getValue('html_id');
++    $configuration['css_styles'] = $form_state->getValue('css_styles');
+     $this->getVariantPlugin()->updateBlock($this->block->getConfiguration()['uuid'], $configuration);
+ 
+     $cached_values = $this->getCachedValues($this->tempstore, $this->tempstore_id, $form_state->get('machine_name'));
+diff --git a/src/Form/PanelsContentForm.php b/src/Form/PanelsContentForm.php
+index 9ab78ba..1c1d2fa 100644
+--- a/src/Form/PanelsContentForm.php
++++ b/src/Form/PanelsContentForm.php
+@@ -15,6 +15,7 @@
+ class PanelsContentForm extends FormBase {
+ 
+   use AjaxFormTrait;
++  use PanelsStyleTrait;
+ 
+   /**
+    * Tempstore factory.
+@@ -91,6 +92,7 @@ public function buildForm(array $form, FormStateInterface $form_state) {
+       '#description' => $this->t('Configure the page title that will be used for this display.'),
+       '#default_value' => $variant_plugin->getConfiguration()['page_title'] ?: '',
+     ];
++    $form += $this->getCSSStyleForm($variant_plugin->getConfiguration());
+     $pattern_plugin = $variant_plugin->getPattern();
+     $machine_name = $pattern_plugin->getMachineName($cached_values);
+ 
+@@ -239,12 +241,22 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
+         $variant_plugin->updateBlock($block_id, $block_values);
+       }
+     }
++    $configuration = $variant_plugin->getConfiguration();
+     // Page Variant title handling.
+     if ($form_state->hasValue('page_title')) {
+-      $configuration = $variant_plugin->getConfiguration();
+       $configuration['page_title'] = $form_state->getValue('page_title');
+-      $variant_plugin->setConfiguration($configuration);
+     }
++    // Page Variant CSS classes, Id, styles handling.
++    if ($form_state->hasValue('css_classes')) {
++      $configuration['css_classes'] = preg_split('/\s+/', trim($form_state->getValue('css_classes')));
++    }
++    if ($form_state->hasValue('html_id')) {
++      $configuration['html_id'] = $form_state->getValue('html_id');
++    }
++    if ($form_state->hasValue('css_styles')) {
++      $configuration['css_styles'] = $form_state->getValue('css_styles');
++    }
++    $variant_plugin->setConfiguration($configuration);
+   }
+ 
+ }
+diff --git a/src/Form/PanelsStyleTrait.php b/src/Form/PanelsStyleTrait.php
+new file mode 100644
+index 0000000..4b748dc
+--- /dev/null
++++ b/src/Form/PanelsStyleTrait.php
+@@ -0,0 +1,51 @@
++<?php
++
++/**
++ * @file
++ * Style-related helper functions.
++ */
++
++namespace Drupal\panels\Form;
++
++
++trait PanelsStyleTrait {
++
++  /**
++   * Get CSS style related form.
++   *
++   * @param array $default_value
++   *   Form items default value.
++   * @param bool $tree
++   *   Form item nested settings, see Form API reference.
++   *
++   * @return array
++   */
++  public function getCSSStyleForm($default_value, $tree = FALSE) {
++    $form = [];
++    $form['style_settings'] = [
++      '#type' => 'details',
++      '#title' => $this->t('Style settings'),
++      '#open' => FALSE,
++      '#tree' => $tree,
++    ];
++    $form['style_settings']['css_classes'] = [
++      '#title' => $this->t('CSS classes'),
++      '#type' => 'textfield',
++      '#default_value' => !empty($default_value['css_classes']) ? implode(' ', $default_value['css_classes']) : NULL,
++      '#description' => $this->t('Customize the element style by adding CSS classes. Separate multiple classes by spaces.'),
++    ];
++    $form['style_settings']['html_id'] = [
++      '#title' => $this->t('HTML Id.'),
++      '#type' => 'textfield',
++      '#default_value' => !empty($default_value['html_id']) ? $default_value['html_id'] : NULL,
++      '#description' => $this->t('Customize the element style by adding CSS #id.'),
++    ];
++    $form['style_settings']['css_styles'] = [
++      '#title' => $this->t('CSS styles'),
++      '#type' => 'textarea',
++      '#default_value' => !empty($default_value['css_styles']) ? $default_value['css_styles'] : NULL,
++      '#description' => $this->t('Customize the element style by adding inline CSS.'),
++    ];
++    return $form;
++  }
++}
+diff --git a/src/Plugin/DisplayBuilder/StandardDisplayBuilder.php b/src/Plugin/DisplayBuilder/StandardDisplayBuilder.php
+index 20fbb61..053edf7 100644
+--- a/src/Plugin/DisplayBuilder/StandardDisplayBuilder.php
++++ b/src/Plugin/DisplayBuilder/StandardDisplayBuilder.php
+@@ -118,12 +118,13 @@ protected function buildRegions(array $regions, array $contexts) {
+           $this->contextHandler->applyContextMapping($block, $contexts);
+         }
+         if ($block->access($this->account)) {
++          $configuration = $block->getConfiguration();
+           $block_render_array = [
+             '#theme' => 'block',
+             '#attributes' => [],
+             '#contextual_links' => [],
+             '#weight' => $weight++,
+-            '#configuration' => $block->getConfiguration(),
++            '#configuration' => $configuration,
+             '#plugin_id' => $block->getPluginId(),
+             '#base_plugin_id' => $block->getBaseId(),
+             '#derivative_plugin_id' => $block->getDerivativeId(),
+@@ -157,6 +158,22 @@ protected function buildRegions(array $regions, array $contexts) {
+ 
+           $block_render_array['content'] = $content;
+ 
++          // Add CSS classes.
++          $css_classes = !empty($configuration['css_classes']) ? $configuration['css_classes'] : [];
++          foreach ($css_classes as $class) {
++            $block_render_array['#attributes']['class'][] = Html::cleanCssIdentifier($class);
++          }
++          // Add HTML Id.
++          $html_id = !empty($configuration['html_id']) ? $configuration['html_id'] : '';
++          if (!empty($html_id)) {
++            $block_render_array['#attributes']['id'] = Html::getId($html_id);
++          }
++          // Add CSS styles.
++          $css_styles = !empty($configuration['css_styles']) ? $configuration['css_styles'] : '';
++          if (!empty($css_styles)) {
++            $block_render_array['#attributes']['style'] = $css_styles;
++          }
++
+           $this->moduleHandler->alter(['block_view', 'block_view_' . $block->getBaseId()], $block_render_array, $block);
+           $build[$region][$block_id] = $block_render_array;
+         }
+diff --git a/src/Plugin/DisplayVariant/PanelsDisplayVariant.php b/src/Plugin/DisplayVariant/PanelsDisplayVariant.php
+index 08b5ffb..1e3a3e3 100644
+--- a/src/Plugin/DisplayVariant/PanelsDisplayVariant.php
++++ b/src/Plugin/DisplayVariant/PanelsDisplayVariant.php
+@@ -2,6 +2,8 @@
+ 
+ namespace Drupal\panels\Plugin\DisplayVariant;
+ 
++use Drupal\Component\Utility\Html;
++use Drupal\Core\Render\Element;
+ use Drupal\Component\Render\HtmlEscapedText;
+ use Drupal\Component\Uuid\UuidInterface;
+ use Drupal\Core\Block\BlockManager;
+@@ -329,6 +331,24 @@ public function build() {
+     $build = $this->getBuilder()->build($this);
+     $build['#title'] = $this->renderPageTitle($this->configuration['page_title']);
+ 
++    // Add CSS classes.
++    $css_classes = !empty($this->configuration['css_classes']) ? $this->configuration['css_classes'] : [];
++    foreach ($css_classes as $class) {
++      $build['#attributes']['class'][] = Html::cleanCssIdentifier($class);
++    }
++
++    // Add HTML Id.
++    $html_id = !empty($this->configuration['html_id']) ? $this->configuration['html_id'] : '';
++    if (!empty($html_id)) {
++      $build['#attributes']['id'] = Html::getId($html_id);
++    }
++
++    // Add CSS styles.
++    $css_styles = !empty($this->configuration['css_styles']) ? $this->configuration['css_styles'] : '';
++    if (!empty($css_styles)) {
++      $build['#attributes']['style'] = $css_styles;
++    }
++
+     // Allow other module to alter the built panel.
+     $this->moduleHandler->alter('panels_build', $build, $this);
+ 
+@@ -372,6 +392,9 @@ public function submitConfigurationForm(array &$form, FormStateInterface $form_s
+       $this->configuration['builder'] = $form_state->getValue('builder');
+     }
+     $this->configuration['page_title'] = $form_state->getValue('page_title');
++    $this->configuration['css_classes'] = preg_split('/\s+/', trim($form_state->getValue('css_classes')));
++    $this->configuration['html_id'] = $form_state->getValue('html_id');
++    $this->configuration['css_styles'] = $form_state->getValue('css_styles');
+   }
+ 
+   /**
+@@ -397,6 +420,9 @@ public function defaultConfiguration() {
+       'page_title' => '',
+       'storage_type' => '',
+       'storage_id' => '',
++      'css_classes' => [],
++      'html_id' => '',
++      'css_styles' => '',
+     ];
+   }
+ 
+diff --git a/src/Tests/PanelsTest.php b/src/Tests/PanelsTest.php
+index 603bd73..0f826fd 100644
+--- a/src/Tests/PanelsTest.php
++++ b/src/Tests/PanelsTest.php
+@@ -11,6 +11,7 @@
+  * @group panels
+  */
+ class PanelsTest extends WebTestBase {
++  use PanelsTestTrait;
+ 
+   /**
+    * {@inheritdoc}
+@@ -91,6 +92,113 @@ public function testLayoutSettings() {
+   }
+ 
+   /**
++   * Tests adding a layout with CSS settings.
++   */
++    function testLayoutWithCSS() {
++      // Create new page.
++      $this->drupalGet('admin/structure/page_manager/add');
++      $edit = [
++        'id' => 'foo',
++        'label' => 'foo',
++        'path' => 'testing_css',
++        'variant_plugin_id' => 'panels_variant',
++      ];
++      $this->drupalPostForm(NULL, $edit, 'Next');
++
++      // Add variant with a layout that has settings.
++      $edit = [
++        'page_variant_label' => 'Default',
++      ];
++      $this->drupalPostForm(NULL, $edit, 'Next');
++
++      // Choose a layout.
++      $edit = [
++        'layout' => 'layout_example_test',
++      ];
++      $this->drupalPostForm(NULL, $edit, 'Next');
++
++      // Update the layout's settings.
++      $this->assertFieldByName('layout_settings_wrapper[layout_settings][setting_1]', 'Default');
++      $edit = [
++        'layout_settings_wrapper[layout_settings][setting_1]' => 'Foobar',
++      ];
++      $this->drupalPostForm(NULL, $edit, 'Next');
++
++      // Add a block with CSS settings.
++      $block_css = $this->generateCSSProperties();
++      $this->clickLink('Add new block');
++      $this->clickLink('Breadcrumbs');
++      $edit = [
++        'region' => 'bottom',
++        'css_classes' => $block_css['css_classes'],
++        'html_id' => $block_css['html_id'],
++        'css_styles' => $block_css['css_style'],
++      ];
++      $this->drupalPostForm(NULL, $edit, 'Add block');
++
++      // Verify saved CSS settings.
++      $this->clickLink('Edit', 0);
++      $this->assertFieldById('edit-css-classes', $block_css['css_classes']);
++      $this->assertFieldById('edit-html-id', $block_css['html_id']);
++      $this->assertFieldById('edit-css-styles', $block_css['css_style']);
++
++      // Re-fill settings with new data and save.
++      $block_css = $this->generateCSSProperties();
++      $edit = [
++        'region' => 'top',
++        'css_classes' => $block_css['css_classes'],
++        'html_id' => $block_css['html_id'],
++        'css_styles' => $block_css['css_style'],
++      ];
++      $this->drupalPostForm(NULL, $edit, 'Update block');
++
++      // Set the variant style settings.
++      $variant_css = $this->generateCSSProperties();
++      $edit = [
++        'css_classes' => $variant_css['css_classes'],
++        'html_id' => $variant_css['html_id'],
++        'css_styles' => $variant_css['css_style'],
++      ];
++
++      // Finish the page add wizard.
++      $this->drupalPostForm(NULL, $edit, 'Finish');
++
++      // Check saved variant style settings.
++      $this->clickLink('Content');
++      $this->assertFieldById('edit-css-classes', $variant_css['css_classes']);
++      $this->assertFieldById('edit-html-id', $variant_css['html_id']);
++      $this->assertFieldById('edit-css-styles', $variant_css['css_style']);
++
++      // Re-fill settings with new data and save.
++      $variant_css = $this->generateCSSProperties();
++      $edit = [
++        'css_classes' => $variant_css['css_classes'],
++        'html_id' => $variant_css['html_id'],
++        'css_styles' => $variant_css['css_style'],
++      ];
++      $this->drupalPostForm(NULL, $edit, 'Update and save');
++
++      // View the page and make sure the setting is present.
++      $this->drupalGet('testing_css');
++      $this->assertText('Blah:');
++      $this->assertText('Foobar');
++      // Test variant styles.
++      $pattern = '/\<div class=\".*' . $variant_css['css_classes'] . '.*layout-example-test clearfix\"/';
++      $this->assertTrue(preg_match($pattern, $this->getRawContent()), 'Found variant custom CSS classes.');
++      $pattern = '/\<div class=\".*layout-example-test clearfix\" id=\"' . $variant_css['html_id'] . '\" /';
++      $this->assertTrue(preg_match($pattern, $this->getRawContent()), 'Found variant custom HTML ID.');
++      $pattern = '/\<div class=\".*layout-example-test clearfix\".*style=\"' . $variant_css['css_style'] . '\"\>/';
++      $this->assertTrue(preg_match($pattern, $this->getRawContent()), 'Found variant custom CSS style.');
++      // Test block styles.
++      $pattern = '/\<div class=\".*' . $block_css['css_classes'] . '.*block-system-breadcrumb-block\"/';
++      $this->assertTrue(preg_match($pattern, $this->getRawContent()), 'Found block custom CSS classes.');
++      $pattern = '/\<div class=\".*block-system-breadcrumb-block\" id=\"' . $block_css['html_id'] . '\" /';
++      $this->assertTrue(preg_match($pattern, $this->getRawContent()), 'Found block custom HTML ID.');
++      $pattern = '/\<div class=\".*block-system-breadcrumb-block\".*style=\"' . $block_css['css_style'] . '\"\>/';
++      $this->assertTrue(preg_match($pattern, $this->getRawContent()), 'Found block custom CSS style.');
++    }
++
++  /**
+    * Tests that special characters are not escaped when using tokens in titles.
+    */
+   public function testPageTitle() {
+diff --git a/src/Tests/PanelsTestTrait.php b/src/Tests/PanelsTestTrait.php
+new file mode 100644
+index 0000000..fc29d93
+--- /dev/null
++++ b/src/Tests/PanelsTestTrait.php
+@@ -0,0 +1,30 @@
++<?php
++
++namespace Drupal\panels\Tests;
++
++/**
++ * Provides common functionality for the Panels test classes.
++ */
++trait PanelsTestTrait {
++
++  /**
++   * Generate random CSS properties (HTML Id., classes, style).
++   *
++   * @param int $class_count
++   *   Class item counter.
++   *
++   * @return array
++   *   Keyed array with generated CSS properties.
++   */
++  public function generateCSSProperties($class_item_count = 5) {
++    $result = [];
++    $result['html_id'] = strtolower($this->randomMachineName());
++    $css_classes_array = [];
++    for ($i = 0; $i < $class_item_count; $i++) {
++      $css_classes_array[] = strtolower($this->randomMachineName());
++    }
++    $result['css_classes'] = implode(' ', $css_classes_array);
++    $result['css_style'] = strtolower($this->randomMachineName() . ': ' . $this->randomMachineName());
++    return $result;
++  }
++}
+diff --git a/tests/modules/panels_test/templates/layout-example-test.html.twig b/tests/modules/panels_test/templates/layout-example-test.html.twig
+index 3cabd71..2dc6b22 100644
+--- a/tests/modules/panels_test/templates/layout-example-test.html.twig
++++ b/tests/modules/panels_test/templates/layout-example-test.html.twig
+@@ -4,15 +4,24 @@
+  * Template for layout_example_test layout.
+  */
+ #}
+-<div class="layout-example-test clearfix">
+-  <div>
+-    <span class="setting-1-label">Blah: </span>
+-    {{ settings.setting_1 }}
++
++{%
++  set classes = [
++  'layout-example-test',
++  'clearfix',
++]
++%}
++{% if content %}
++  <div{{ attributes.addClass(classes) }}>
++    <div>
++      <span class="setting-1-label">Blah: </span>
++      {{ settings.setting_1 }}
++    </div>
++    <div class="region-top">
++      {{ content.top }}
++    </div>
++    <div class="region-bottom">
++      {{ content.bottom }}
++    </div>
+   </div>
+-  <div class="region-top">
+-    {{ content.top }}
+-  </div>
+-  <div class="region-bottom">
+-    {{ content.bottom }}
+-  </div>
+-</div>
++{% endif %}

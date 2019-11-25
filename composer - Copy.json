@@ -25,29 +25,21 @@
         "drupal/adminimal_theme": "1.x-dev",
         "drupal/backup_migrate": "4.x-dev",
         "drupal/blazy": "1.x-dev",
-        "drupal/block_class": "1.x-dev",
         "drupal/bootstrap": "3.x-dev",
         "drupal/bootstrap_layouts": "5.x-dev",
         "drupal/calendar": "1.x-dev",
-        "drupal/captcha": "1.x-dev",
-        "drupal/ckeditor_codemirror": "2.x-dev",
         "drupal/ckeditor_iframe": "2.x-dev",
-        "drupal/ckeditor_uploadimage": "1.x-dev",
         "drupal/color_field": "2.x-dev",
         "drupal/commerce": "2.x-dev",
-        "drupal/commerce_cart_flyout": "1.x-dev",
         "drupal/commerce_paypal": "1.x-dev",
-        "drupal/conditional_fields": "1.x-dev",
         "drupal/console": "^1.0.2",
         "drupal/core": "^8.6.0",
-        "drupal/ctools": "3.0",
+        "drupal/ctools": "3.x-dev",
         "drupal/data": "1.x-dev",
         "drupal/datetime_extras": "1.x-dev",
         "drupal/devel": "^1.2",
         "drupal/diff": "1.x-dev",
-        "drupal/draggableviews": "1.x-dev",
         "drupal/dropzonejs": "2.x-dev",
-        "drupal/duration_field": "2.x-dev",
         "drupal/entity": "1.x-dev",
         "drupal/entity_browser": "2.x-dev",
         "drupal/entity_embed": "1.x-dev",
@@ -74,17 +66,11 @@
         "drupal/remote_stream_wrapper_widget": "1.x-dev",
         "drupal/rules": "3.x-dev",
         "drupal/schema_metatag": "1.x-dev",
-        "drupal/search_api": "1.x-dev",
         "drupal/select_or_other": "1.x-dev",
-        "drupal/shs": "1.x-dev",
-        "drupal/slick": "1.x-dev",
         "drupal/superfish": "1.x-dev",
         "drupal/swiftmailer": "1.x-dev",
-        "drupal/taxonomy_menu": "3.x-dev",
         "drupal/token": "1.x-dev",
         "drupal/video_embed_field": "2.x-dev",
-        "drupal/views_bulk_operations": "3.x-dev",
-        "drupal/views_slideshow": "4.x-dev",
         "drupal/viewsreference": "2.x-dev",
         "drupal/webform": "5.x-dev",
         "drush/drush": "^9.0.0",
@@ -140,17 +126,6 @@
                 ".editorconfig": "../.editorconfig",
                 ".gitattributes": "../.gitattributes"
             }
-        },
-		"patches": {
-            "drupal/panels": {
-                "Custom attributes in panels blocks and variants": "https://www.drupal.org/files/issues/2018-10-20/panels_custom_attributes_in_panels_blocks-2849867-46.patch"     
-            },
-			"drupal/page_manager": {
-				"Page Manager currently not working with CTools 3.1": "https://www.drupal.org/files/issues/2019-02-17/page_manager-user_tempstore_fix-3033057-4.patch"
-			},
-			"drupal/shs": {
-				"Add functionality to add new terms": "https://www.drupal.org/files/issues/2019-03-15/shs-add-new-terms-functionality.patch"
-			}
         }
     }
 }

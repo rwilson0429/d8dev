@@ -1,0 +1,59 @@
+<?php
+/**
+ * Implements hook_preprocess_page() for block templates.
+ */
+
+/**
+ * Implements hook_theme_suggestions_HOOK_alter for blocks.
+ */
+ /**
+  *Inheriting Block Templates
+If the theme you are extending has custom block templates these won't be immediately inherited because a sub-theme creates copies of all the blocks in the parent theme and renames them with the sub-theme's name as a prefix. Twig block templates are derived from the block's name, so this breaks the link between these templates and their block. Fixing this problem currently requires a hook in the sub-theme.  Fixing this problem currently requires a hook in the sub-theme.  The function below provides that hook.
+ */
+function acw_yg_simple_theme_suggestions_block_alter(&$suggestions, $variables) {
+
+  // Load theme suggestions for blocks from parent theme.
+  foreach ($suggestions as &$suggestion) {
+    $suggestion = str_replace('shaved_', 'yg_simple', $suggestion);
+  }
+}
+
+/**
+* How to get site_name: https://www.drupal.org/forum/support/module-development-and-code-questions/2016-01-29/how-to-get-site_name-d8#comment-10798284 
+
+	You can get site name via \Drupal::config(), for example:
+
+	  // Load the site name out of configuration.
+	  $config = \Drupal::config('system.site');
+	  $variables['site']['name'] = $config->get('name');
+
+	If you are going to use site name or slogan in your templates, you can use hook_preprocess, for example page template:
+
+	function yourtheme_preprocess_page(array &$variables) {
+
+	  // Load the site name out of configuration.
+	  $config = \Drupal::config('system.site');
+	  $variables['site_name'] = $config->get('name');
+	  $variables['site_slogan'] = $config->get('slogan');
+	}
+
+	then in template:
+
+	{# page.html.twig #}
+
+	<div class="branding">
+		<div class="branding__name">{{ site_name }}</div>
+		<div class="branding__slogan">{{ site_slogan }}</div>
+	</div>
+
+*/
+
+function acw_yg_simple_preprocess_page(array &$variables) {
+
+  // Load the site name out of configuration.
+  $config = \Drupal::config('system.site');
+  $variables['site_name'] = $config->get('name');
+  $variables['site_slogan'] = $config->get('slogan');
+
+}
+

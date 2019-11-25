@@ -1,0 +1,9 @@
+global-styling: # Libraries needed in all pages.
+  css:
+    theme:
+      'https://fonts.googleapis.com/css?family=Work+Sans:400,300,600,400italic,700': { type: external }
+      css/acw.css: {}
+
+  js:
+    js/scripts.js: {} 
+

@@ -1,0 +1,16 @@
+/**
+ * Place your custom styles here.
+ */
+ 
+/*change color of svg commerce cart icon.  See https://www.drupal.org/project/commerce/issues/2910184#comment-12583432 */ 
+.cls-1 {
+	fill: #393434 !important;
+}
+
+body {
+  /* font grows 1px for every 100px of viewport width*/
+  /* font-size: calc(16px + 1vw); */
+  font-size: calc(112.5% + 0.5vw);
+  /* leading grows along with font, with an additional 0.1em + 0.5px per 100px of the viewport*/
+  line-height: calc(1.1em + 0.5vw);
+}

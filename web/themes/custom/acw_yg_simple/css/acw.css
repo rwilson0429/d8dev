@@ -1,0 +1,82 @@
+/**
+* Style sheet for A Cranberry Weekend
+* Theme color codes:
+	Color: Purple: 	Hex: #BE56A8; rgb(190,86,168);
+	Color: dark pink: #BA53A0; rgb(186,83,160);
+	Color: Light Purple: Hex: #DAACD0; rgb(218, 172, 208)
+	coor: dark purple: hex: #b6559d; rgb(182,85,157)
+	Color: Green: hex: #006F35; rgb(0, 111, 53);
+	Color: lighter Green: hex: #AABFAA; rgb(170, 191, 170);
+	color: black; hex: #0D0D0D; rgb(13, 13, 13)
+		
+*/
+
+h1, h2, h3, h4, h5, h6 {
+	color: #157d4d;
+	font-family: Tangerine, 'Great Vibes', cursive;
+	font-weight: 700;
+}
+
+/* p:first-of-type:first-letter {
+    float: left;
+    font-size: 45px;
+    line-height: 1;
+    font-weight: bold;
+	font-family: tangerine;
+	font-size: 75px;
+	line-height: 60px;
+	padding-top: 4px;
+	padding-right: 8px;
+	padding-left: 3px;
+    margin-right: 9px;
+	color: #BA53A0;
+	text-shadow: #690 .025em .025em;
+} */
+
+.button {
+	background-color: rgb(0, 111, 53);
+	box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+	display: inline-block;
+	padding: 1em 1.5em;
+    font-size: 1.5em;
+	-webkit-transition-duration: 0.4s; /* Safari */
+    transition-duration: 0.4s;
+    cursor: pointer;
+	color: white;
+	}
+	
+.button:hover {
+    background-color: rgba(0, 111, 53, .5);
+    color: white;
+	color: #BA53A0;
+}
+
+.content-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.fh5co-section {
+    background: rgba(218, 172, 208,.175);
+}
+
+#fh5co-header nav li a{
+	color: rgb(218, 172, 208);
+    font-size: 1.5vw;
+    text-shadow: 1px 1px 2px #000;
+    font-weight: 600;
+}
+input, .form-item {
+  -webkit-transition: width 0.4s ease-in-out;
+  transition: width 0.4s ease-in-out;
+  max-width: 100%;
+}
+
+.block-layout-builder, .block-block-content {
+	padding: 2em;
+}
+
+img {
+    max-width: 100% !important;
+  }
